@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integration Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--border:#30363d;
+    --accent:#1f6feb;--accent2:#388bfd;--green:#3fb950;--red:#f85149;
+    --yellow:#d29922;--text:#e6edf3;--muted:#8b949e;
+    --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
+
+  /* LOGIN */
+  #login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,.6);}
+  .login-logo{font-family:var(--mono);font-size:13px;color:var(--accent2);letter-spacing:.06em;margin-bottom:28px;display:flex;align-items:center;gap:8px;}
+  .login-logo span{font-size:20px;}
+  .login-box h2{font-size:18px;font-weight:600;margin-bottom:4px;}
+  .login-box p{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .login-field{margin-bottom:16px;}
+  .login-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;}
+  .login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-family:var(--sans);font-size:13px;outline:none;transition:border .15s;}
+  .login-field input:focus{border-color:var(--accent);}
+  .login-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:background .15s;margin-top:4px;}
+  .login-btn:hover{background:var(--accent2);}
+  .login-err{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);color:#ffa198;padding:10px 14px;border-radius:6px;font-size:12px;margin-top:12px;display:none;}
+  .login-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;}
+  .login-hint strong{color:var(--text);}
+
+  /* SESSION BAR */
+  .session-bar{background:rgba(210,153,34,.12);border-bottom:1px solid rgba(210,153,34,.3);padding:8px 24px;font-size:12px;color:var(--yellow);display:none;align-items:center;gap:10px;}
+  .session-bar.show{display:flex;}
+
+  /* NAV */
+  nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:52px;position:sticky;top:0;z-index:200;}
+  .nav-brand{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--accent2);letter-spacing:.05em;margin-right:32px;}
+  .nav-tab{padding:0 16px;height:52px;display:flex;align-items:center;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+  .nav-tab:hover{color:var(--text);}
+  .nav-tab.active{color:var(--text);border-bottom-color:var(--accent2);}
+  .nav-user{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);}
+  .role-badge{background:rgba(56,139,253,.15);color:var(--accent2);padding:2px 8px;border-radius:20px;font-size:11px;}
+  .logout-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s;}
+  .logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+  /* PAGES */
+  .page{display:none;padding:24px;max-width:1100px;margin:0 auto;}
+  .page.active{display:block;}
+  h2{font-size:18px;font-weight:600;margin-bottom:4px;}
+  h3{font-size:14px;font-weight:600;}
+  .page-subtitle{color:var(--muted);font-size:13px;margin-bottom:24px;}
+
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+
+  /* FORM */
+  select,input[type=number],input[type=text],input[type=password]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--sans);font-size:13px;outline:none;}
+  select:focus,input:focus{border-color:var(--accent);}
+  input.inline-edit{background:transparent;border:none;border-bottom:1px solid transparent;width:180px;font-size:13px;padding:2px 4px;}
+  input.inline-edit:focus{border-bottom-color:var(--accent);background:var(--surface2);border-radius:4px 4px 0 0;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent2);}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent2);}
+  .btn-green{background:var(--green);color:#000;font-weight:600;}
+  .btn-green:hover{background:#56d364;}
+  .btn-warn{background:rgba(210,153,34,.15);color:var(--yellow);border:1px solid rgba(210,153,34,.4);}
+  .btn-warn:hover{background:rgba(210,153,34,.25);}
+  .btn-danger-outline{background:transparent;color:var(--red);border:1px solid rgba(248,81,73,.4);}
+  .btn-danger-outline:hover{border-color:var(--red);background:rgba(248,81,73,.08);}
+  .btn-sm{padding:4px 10px;font-size:12px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* FILTER BAR */
+  .filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .filter-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .filter-opt{padding:5px 14px;font-size:12px;cursor:pointer;color:var(--muted);transition:all .15s;user-select:none;border:none;background:none;font-family:var(--sans);}
+  .filter-opt.active{background:var(--accent);color:#fff;}
+  .filter-count{font-family:var(--mono);font-size:11px;background:rgba(248,81,73,.15);color:var(--red);padding:2px 7px;border-radius:10px;margin-left:2px;}
+
+  /* MAIN WORKFLOW */
+  .workflow{display:flex;margin-bottom:24px;}
+  .wf-step{flex:1;display:flex;align-items:center;}
+  .wf-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:var(--surface);flex-shrink:0;z-index:1;transition:all .3s;}
+  .wf-dot.done{background:var(--green);border-color:var(--green);color:#000;cursor:pointer;}
+  .wf-dot.done:hover{background:#56d364;box-shadow:0 0 0 3px rgba(63,185,80,.25);}
+  .wf-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 4px rgba(31,111,235,.2);}
+  .wf-label{font-size:11px;color:var(--muted);margin-left:8px;white-space:nowrap;transition:color .15s;}
+  .wf-label.clickable{color:var(--accent2);cursor:pointer;}
+  .wf-label.clickable:hover{text-decoration:underline;}
+  .wf-line{flex:1;height:2px;background:var(--border);margin:0 4px;transition:background .4s;}
+  .wf-line.done{background:var(--green);}
+
+  /* STEP PANELS */
+  .step-panel{display:none;animation:fadeIn .2s ease;}
+  .step-panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+  /* STATS */
+  .stats-row{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;}
+  .stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;flex:1;min-width:120px;}
+  .stat-val{font-family:var(--mono);font-size:22px;font-weight:600;}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:2px;}
+  .stat-box.green .stat-val{color:var(--green);}
+  .stat-box.yellow .stat-val{color:var(--yellow);}
+  .stat-box.red .stat-val{color:var(--red);}
+  .stat-box.blue .stat-val{color:var(--accent2);}
+  .stat-box.total{background:var(--accent);border-color:var(--accent);}
+  .stat-box.total .stat-val{color:#fff;}
+  .stat-box.total .stat-label{color:rgba(255,255,255,.65);}
+
+  /* TABLES */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:8px 12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.05em;}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:rgba(255,255,255,.02);}
+  tr.hidden-row{display:none;}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+  .badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+  .badge-red{background:rgba(248,81,73,.15);color:var(--red);}
+  .badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);}
+  .badge-blue{background:rgba(56,139,253,.15);color:var(--accent2);}
+  .badge-gray{background:rgba(139,148,158,.15);color:var(--muted);}
+
+  /* ALERTS */
+  .alert{padding:12px 16px;border-radius:6px;font-size:13px;margin:12px 0;display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+  .alert-error{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);color:#ffa198;}
+  .alert-success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);color:#7ee787;}
+  .alert-info{background:rgba(56,139,253,.1);border:1px solid rgba(56,139,253,.3);color:#79c0ff;}
+  .alert-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);color:#e3b341;}
+  .alert a{text-decoration:underline;color:inherit;font-weight:500;}
+
+  /* PROGRESS */
+  .progress-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:4px 0;}
+  .progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s ease;}
+  .progress-fill.green{background:var(--green);}
+  .progress-fill.red{background:var(--red);}
+
+  /* SPINNER */
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;flex-shrink:0;}
+  .spinner.dark{border-color:var(--border);border-top-color:var(--accent);}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ADJ */
+  .adj-row{display:flex;align-items:center;gap:12px;margin:10px 0;}
+  .adj-label{width:90px;font-size:13px;color:var(--muted);}
+  .adj-note{font-size:11px;color:var(--muted);}
+  .adj-error{font-size:12px;color:var(--red);margin-top:2px;display:none;}
+
+  /* ── SUB-STEP LIST (Step 3) ── */
+  .substep-list{display:flex;flex-direction:column;gap:0;}
+  .substep-row{display:grid;grid-template-columns:32px 1fr 160px 80px 110px 90px;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);transition:background .15s;}
+  .substep-row:last-child{border-bottom:none;}
+  .substep-row:hover{background:rgba(255,255,255,.015);}
+  .substep-row.ss-running{background:rgba(31,111,235,.04);}
+  .substep-row.ss-done{background:rgba(63,185,80,.03);}
+  .substep-row.ss-error{background:rgba(248,81,73,.04);}
+  .substep-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:2px solid var(--border);background:var(--surface2);color:var(--muted);}
+  .substep-icon.done{background:var(--green);border-color:var(--green);color:#000;}
+  .substep-icon.running{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .substep-icon.error{background:var(--red);border-color:var(--red);color:#fff;}
+  .substep-name{font-size:13px;font-weight:500;}
+  .substep-proc{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px;}
+  .substep-meta{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .substep-dur{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .substep-prog{width:110px;}
+  .substep-prog .progress-bar{margin:0;}
+  .substep-progval{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;font-family:var(--mono);}
+  .substep-action{text-align:right;}
+
+  /* TRACKING */
+  .track-row{cursor:pointer;user-select:none;}
+  .track-row:hover td{background:rgba(255,255,255,.025);}
+  .track-detail{display:none;padding:16px 20px;background:var(--surface2);border-top:1px solid var(--border);}
+  .track-detail.open{display:block;}
+  .step-timeline{display:flex;flex-direction:column;}
+  .tl-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(48,54,61,.6);}
+  .tl-item:last-child{border-bottom:none;}
+  .tl-step{width:160px;font-size:12px;font-weight:500;flex-shrink:0;}
+  .tl-time{font-family:var(--mono);font-size:11px;color:var(--muted);width:140px;flex-shrink:0;padding-top:2px;}
+  .tl-user{font-size:12px;color:var(--muted);}
+
+  /* INVOICE LIST in tracking */
+  .inv-list-wrap{margin-top:10px;}
+  .inv-list-filter{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
+  .inv-list-table{font-size:12px;}
+  .inv-list-table th{font-size:10px;}
+  .inv-list-table td{padding:7px 10px;}
+
+  /* INV PROG */
+  .inv-prog{display:flex;gap:20px;align-items:center;margin-top:10px;}
+  .inv-prog-item{font-size:12px;}
+  .inv-prog-item span{font-family:var(--mono);font-weight:600;}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .modal h3{font-size:16px;margin-bottom:8px;}
+  .modal p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+  .modal-summary{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:20px;}
+  .modal-summary-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .modal-summary-row.total{font-weight:600;border-top:1px solid var(--border);margin-top:6px;padding-top:10px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+
+  /* MISC */
+  .auth-warn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.25);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--yellow);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .dup-warn{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:6px;padding:12px 16px;font-size:13px;color:#ffa198;margin-top:12px;}
+  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:12px;}
+  hr{border:none;border-top:1px solid var(--border);margin:16px 0;}
+  .hidden{display:none!important;}
+  .period-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .poll-config{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:8px;}
+  .poll-config input{width:50px;padding:3px 6px;font-size:11px;}
+  .xls-icon{background:#1d6f42;color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;letter-spacing:.03em;}
+
+  /* SAMPLE INVOICE NOTE */
+  .sample-note{font-size:11px;color:var(--muted);padding:8px 12px;background:rgba(139,148,158,.06);border-radius:4px;margin-bottom:8px;font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><span>⬡</span> INTEGRATION PORTAL</div>
+    <h2>Sign in</h2>
+    <p>Oracle APEX — CERNER · Fusion Integration</p>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="username" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Invalid username or password. Please try again.</div>
+    <div class="login-hint">Demo credentials: <strong>admin</strong> / <strong>admin</strong></div>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div id="app-shell" style="display:none">
+
+<div class="session-bar" id="session-bar">
+  ⚠ Your session will expire in <strong id="session-countdown">5:00</strong>. Pending approvals will remain in their current state.
+  <button class="btn btn-secondary btn-sm" onclick="extendSession()">Extend Session</button>
+</div>
+
+<nav>
+  <div class="nav-brand">⬡ INTEGRATION PORTAL</div>
+  <div class="nav-tab active" id="tab-dashboard" onclick="showPage('dashboard',this)">Dashboard</div>
+  <div class="nav-tab" id="tab-indirect" onclick="showPage('indirect',this)">Indirect Expenses</div>
+  <div class="nav-tab" id="tab-tracking" onclick="showPage('tracking',this)">Tracking</div>
+  <div class="nav-user">
+    <span id="nav-username">admin</span>
+    <span class="role-badge">INTEGRATION_MANAGER</span>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+</nav>
+
+<!-- MODAL: Send Confirm -->
+<div class="modal-overlay" id="modal-send">
+  <div class="modal">
+    <h3>Confirm: Send Invoices to Oracle Fusion</h3>
+    <p>You are about to send the following approved invoices to Oracle Fusion for period <strong id="modal-period-label">Jan 2026</strong>. This action cannot be undone.</p>
+    <div class="modal-summary">
+      <div class="modal-summary-row"><span>Direct</span><span style="font-family:var(--mono)" id="ms-direct">$1,240,000</span></div>
+      <div class="modal-summary-row"><span>Indirect</span><span style="font-family:var(--mono)" id="ms-indirect">$284,500</span></div>
+      <div class="modal-summary-row"><span>Services</span><span style="font-family:var(--mono)" id="ms-services">$95,000</span></div>
+      <div class="modal-summary-row total"><span>Grand Total</span><span style="font-family:var(--mono)" id="ms-total">$1,619,500</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-send')">Cancel</button>
+      <button class="btn btn-green" onclick="confirmSendToFusion()">Confirm &amp; Send →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Deactivate -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <h3>Deactivate Account?</h3>
+    <p>Account <strong id="modal-delete-acct"></strong> will be marked <em>Inactive</em> and excluded from future integrations.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-delete')">Cancel</button>
+      <button class="btn btn-danger-outline" onclick="confirmDelete()">Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Fusion Error -->
+<div class="modal-overlay" id="modal-fusion-err">
+  <div class="modal">
+    <h3>Fusion Sync Failed</h3>
+    <p>Oracle Fusion rejected the update. Changes saved locally but <strong>not</strong> pushed to Fusion.</p>
+    <div class="alert alert-error" style="margin:0 0 20px 0">REST 422: Account 5003 — Amount cannot be zero for an enabled account.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-fusion-err')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-fusion-err');submitIndirect(true)">Retry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div class="page active" id="page-dashboard">
+  <h2>Dashboard</h2>
+  <p class="page-subtitle">Run and manage the CERNER → Oracle Fusion integration</p>
+
+  <div class="card">
+    <div class="section-label">Start Integration</div>
+    <div class="period-row">
+      <select id="period-select" onchange="onPeriodChange()">
+        <option value="">— Select Accounting Period —</option>
+        <option value="jan26">January 2026</option>
+        <option value="feb26">February 2026</option>
+        <option value="mar26">March 2026</option>
+      </select>
+    </div>
+    <div class="dup-warn hidden" id="dup-warn">
+      ⛔ An active run already exists for this period (<span id="dup-run-id"></span>, status: <span id="dup-status"></span>).
+      <a href="#" onclick="showPage('tracking',document.getElementById('tab-tracking'));return false;" style="color:var(--red);text-decoration:underline">View in Tracking →</a>
+    </div>
+    <div class="poll-config hidden" id="poll-config">
+      <span>Job polling interval:</span>
+      <input type="number" id="poll-seconds" value="8" min="5" max="60"> <span>seconds</span>
+    </div>
+  </div>
+
+  <div id="workflow-area" class="hidden">
+
+    <!-- MAIN WORKFLOW INDICATOR -->
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-dot active" id="dot-1" onclick="jumpToStep(1)">1</div>
+        <div class="wf-label" id="wf-label-1">Item Cost</div>
+      </div>
+      <div class="wf-line" id="line-1"></div>
+      <div class="wf-step">
+        <div class="wf-dot" id="dot-2" onclick="jumpToStep(2)">2</div>
+        <div class="wf-label" id="wf-label-2">Indirect Cost</div>
+      </div>
+      <div class="wf-line" id="line-2"></div>
+      <div class="wf-step">
+        <div class="wf-dot" id="dot-3" onclick="jumpToStep(3)">3</div>
+        <div class="wf-label" id="wf-label-3">Prepare Invoices</div>
+      </div>
+      <div class="wf-line" id="line-3"></div>
+      <div class="wf-step">
+        <div class="wf-dot" id="dot-4" onclick="jumpToStep(4)">4</div>
+        <div class="wf-label" id="wf-label-4">Adjustments</div>
+      </div>
+      <div class="wf-line" id="line-4"></div>
+      <div class="wf-step">
+        <div class="wf-dot" id="dot-5" onclick="jumpToStep(5)">5</div>
+        <div class="wf-label" id="wf-label-5">Send to Fusion</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- STEP 1: Item Cost                                  -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="step-panel active" id="step-1">
+      <div class="card">
+        <div class="card-header">
+          <h3>Step 1 — Item Cost</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="runStep1()" id="btn-step1">Collect Data</button>
+            <button class="btn btn-secondary hidden" id="btn-dl-step1" onclick="downloadExcel('item_cost')"><span class="xls-icon">XLS</span> Download Excel</button>
+          </div>
+        </div>
+        <div id="step1-result" class="hidden">
+          <div class="stats-row">
+            <div class="stat-box green"><div class="stat-val" id="s1-processed">847</div><div class="stat-label">Processed</div></div>
+            <div class="stat-box yellow"><div class="stat-val" id="s1-pending">0</div><div class="stat-label">Pending</div></div>
+            <div class="stat-box red"><div class="stat-val" id="s1-errors">4</div><div class="stat-label">No Cost in Fusion</div></div>
+          </div>
+          <div class="alert alert-error" id="step1-err-alert">
+            ⚠ <span id="step1-err-count">4</span> items have no cost in Fusion. Use the <strong>Retry</strong> button per item.
+          </div>
+          <div class="filter-bar">
+            <div class="filter-toggle">
+              <button class="filter-opt active" id="filt-all" onclick="filterItems('all')">All Items</button>
+              <button class="filter-opt" id="filt-err" onclick="filterItems('error')">Errors Only <span class="filter-count" id="err-filter-count">4</span></button>
+            </div>
+            <span style="font-size:12px;color:var(--muted)" id="filter-summary">Showing all 874 items</span>
+          </div>
+          <table id="items-table">
+            <thead><tr><th>Item No.</th><th>Description</th><th>Status</th><th>Unit Cost</th><th>Action</th></tr></thead>
+            <tbody id="items-tbody">
+              <tr data-status="processed"><td style="font-family:var(--mono)">ITM-001</td><td>Surgical Gloves</td><td><span class="badge badge-green">Processed</span></td><td style="font-family:var(--mono)">$12.50</td><td>—</td></tr>
+              <tr data-status="processed"><td style="font-family:var(--mono)">ITM-002</td><td>IV Catheter 18G</td><td><span class="badge badge-green">Processed</span></td><td style="font-family:var(--mono)">$4.80</td><td>—</td></tr>
+              <tr data-status="processed"><td style="font-family:var(--mono)">ITM-005</td><td>Disposable Syringe 5ml</td><td><span class="badge badge-green">Processed</span></td><td style="font-family:var(--mono)">$0.95</td><td>—</td></tr>
+              <tr data-status="pending"><td style="font-family:var(--mono)">ITM-003</td><td>Suture Kit</td><td><span class="badge badge-yellow">Pending</span></td><td style="font-family:var(--mono)">—</td><td>—</td></tr>
+              <tr data-status="error" id="row-ITM-004"><td style="font-family:var(--mono)">ITM-004</td><td>Antiseptic 500ml</td><td id="status-ITM-004"><span class="badge badge-red">No Cost</span></td><td id="cost-ITM-004" style="font-family:var(--mono)">—</td><td><button class="btn btn-warn btn-sm" onclick="retryItemStep1(this,'ITM-004')">↺ Retry</button></td></tr>
+              <tr data-status="error" id="row-ITM-006"><td style="font-family:var(--mono)">ITM-006</td><td>Bandage Roll 10cm</td><td id="status-ITM-006"><span class="badge badge-red">No Cost</span></td><td id="cost-ITM-006" style="font-family:var(--mono)">—</td><td><button class="btn btn-warn btn-sm" onclick="retryItemStep1(this,'ITM-006')">↺ Retry</button></td></tr>
+              <tr data-status="error" id="row-ITM-007"><td style="font-family:var(--mono)">ITM-007</td><td>Latex Gloves L</td><td id="status-ITM-007"><span class="badge badge-red">API Timeout</span></td><td id="cost-ITM-007" style="font-family:var(--mono)">—</td><td><button class="btn btn-warn btn-sm" onclick="retryItemStep1(this,'ITM-007')">↺ Retry</button></td></tr>
+              <tr data-status="error" id="row-ITM-008"><td style="font-family:var(--mono)">ITM-008</td><td>Saline Solution 1L</td><td id="status-ITM-008"><span class="badge badge-red">No Cost</span></td><td id="cost-ITM-008" style="font-family:var(--mono)">—</td><td><button class="btn btn-warn btn-sm" onclick="retryItemStep1(this,'ITM-008')">↺ Retry</button></td></tr>
+            </tbody>
+          </table>
+          <div class="alert alert-success hidden" id="step1-all-resolved">✓ All item errors resolved. You can now proceed.</div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary" id="btn-next-step1" onclick="goStep(2)" disabled>Next: Indirect Cost →</button>
+            <span style="font-size:12px;color:var(--muted);margin-left:10px" id="next-step1-note">Resolve all errors and pending items to proceed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- STEP 2: Indirect Cost                              -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="step-panel" id="step-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Step 2 — Indirect Cost</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="runStep2Retry()" id="btn-step2-retry">↺ Retry</button>
+            <button class="btn btn-primary" onclick="runStep2()" id="btn-step2">Collect Data</button>
+            <button class="btn btn-secondary hidden" id="btn-dl-step2" onclick="downloadExcel('indirect_cost')"><span class="xls-icon">XLS</span> Download Excel</button>
+          </div>
+        </div>
+        <div id="step2-result" class="hidden">
+          <div class="stats-row">
+            <div class="stat-box blue"><div class="stat-val">$284,500</div><div class="stat-label">Total Indirect Cost</div></div>
+            <div class="stat-box"><div class="stat-val" style="font-size:14px;color:var(--muted);font-family:var(--sans);font-weight:400">3 accounts loaded</div><div class="stat-label">From Oracle Fusion</div></div>
+          </div>
+          <table>
+            <thead><tr><th>Account</th><th>Description</th><th>Amount</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:var(--mono)">5001</td><td>Overhead — Facilities</td><td style="font-family:var(--mono)">$120,000</td></tr>
+              <tr><td style="font-family:var(--mono)">5002</td><td>Overhead — Admin</td><td style="font-family:var(--mono)">$94,500</td></tr>
+              <tr><td style="font-family:var(--mono)">5003</td><td>Overhead — IT</td><td style="font-family:var(--mono)">$70,000</td></tr>
+            </tbody>
+          </table>
+          <div class="alert alert-info" style="margin-top:12px">ℹ To modify accounts visit the <a href="#" onclick="showPage('indirect',document.getElementById('tab-indirect'));return false;">Indirect Expenses page →</a></div>
+          <div style="margin-top:16px"><button class="btn btn-primary" onclick="goStep(3)">Next: Prepare Invoices →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- STEP 3: Prepare Invoices — 5 sub-steps            -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="step-panel" id="step-3">
+      <div class="card">
+        <div class="card-header">
+          <h3>Step 3 — Prepare Invoices</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-primary" id="btn-step3-run" onclick="runStep3All()">Run All Steps</button>
+            <button class="btn btn-secondary hidden" id="btn-dl-step3" onclick="downloadExcel('invoices')"><span class="xls-icon">XLS</span> Download Excel</button>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Five procedures run in sequence. Each step must complete before the next starts. Failed steps can be retried individually.</p>
+
+        <!-- Sub-step list -->
+        <div class="substep-list" id="substep-list">
+
+          <!-- Header row -->
+          <div style="display:grid;grid-template-columns:32px 1fr 160px 80px 110px 90px;gap:12px;padding:6px 16px;border-bottom:1px solid var(--border);">
+            <div></div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600">Step / Procedure</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600">Start Time</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600">Duration</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600">Progress</div>
+            <div></div>
+          </div>
+
+          <!-- SS1: Update Patient Names -->
+          <div class="substep-row" id="ss-row-1">
+            <div class="substep-icon" id="ss-icon-1">1</div>
+            <div>
+              <div class="substep-name">Update Patient Names</div>
+              <div class="substep-proc">UPDATE_MRN_NAME_FROM_CERNER</div>
+            </div>
+            <div class="substep-meta" id="ss-time-1">—</div>
+            <div class="substep-dur" id="ss-dur-1">—</div>
+            <div class="substep-prog">
+              <div class="progress-bar"><div class="progress-fill" id="ss-prog-1" style="width:0%"></div></div>
+              <div class="substep-progval" id="ss-progval-1">—</div>
+            </div>
+            <div class="substep-action" id="ss-action-1">—</div>
+          </div>
+
+          <!-- SS2: Load Direct Data -->
+          <div class="substep-row" id="ss-row-2">
+            <div class="substep-icon" id="ss-icon-2">2</div>
+            <div>
+              <div class="substep-name">Load Direct Data</div>
+              <div class="substep-proc">LOAD_01_DIRECT_TRX_TO_STAGE</div>
+            </div>
+            <div class="substep-meta" id="ss-time-2">—</div>
+            <div class="substep-dur" id="ss-dur-2">—</div>
+            <div class="substep-prog">
+              <div class="progress-bar"><div class="progress-fill" id="ss-prog-2" style="width:0%"></div></div>
+              <div class="substep-progval" id="ss-progval-2">—</div>
+            </div>
+            <div class="substep-action" id="ss-action-2">—</div>
+          </div>
+
+          <!-- SS3: Load Indirect Data -->
+          <div class="substep-row" id="ss-row-3">
+            <div class="substep-icon" id="ss-icon-3">3</div>
+            <div>
+              <div class="substep-name">Load Indirect Data</div>
+              <div class="substep-proc">LOAD_02_INDIRECT_TRX_TO_STAGE</div>
+            </div>
+            <div class="substep-meta" id="ss-time-3">—</div>
+            <div class="substep-dur" id="ss-dur-3">—</div>
+            <div class="substep-prog">
+              <div class="progress-bar"><div class="progress-fill" id="ss-prog-3" style="width:0%"></div></div>
+              <div class="substep-progval" id="ss-progval-3">—</div>
+            </div>
+            <div class="substep-action" id="ss-action-3">—</div>
+          </div>
+
+          <!-- SS4: Load Service Data -->
+          <div class="substep-row" id="ss-row-4">
+            <div class="substep-icon" id="ss-icon-4">4</div>
+            <div>
+              <div class="substep-name">Load Service Data</div>
+              <div class="substep-proc">LOAD_03_SERVICE_TRX_TO_STAGE</div>
+            </div>
+            <div class="substep-meta" id="ss-time-4">—</div>
+            <div class="substep-dur" id="ss-dur-4">—</div>
+            <div class="substep-prog">
+              <div class="progress-bar"><div class="progress-fill" id="ss-prog-4" style="width:0%"></div></div>
+              <div class="substep-progval" id="ss-progval-4">—</div>
+            </div>
+            <div class="substep-action" id="ss-action-4">—</div>
+          </div>
+
+          <!-- SS5: Create Invoices -->
+          <div class="substep-row" id="ss-row-5">
+            <div class="substep-icon" id="ss-icon-5">5</div>
+            <div>
+              <div class="substep-name">Create Invoices</div>
+              <div class="substep-proc">CREATE_ONPRIME_INVOICE_JOB</div>
+            </div>
+            <div class="substep-meta" id="ss-time-5">—</div>
+            <div class="substep-dur" id="ss-dur-5">—</div>
+            <div class="substep-prog">
+              <div class="progress-bar"><div class="progress-fill" id="ss-prog-5" style="width:0%"></div></div>
+              <div class="substep-progval" id="ss-progval-5">—</div>
+            </div>
+            <div class="substep-action" id="ss-action-5">—</div>
+          </div>
+
+        </div><!-- /substep-list -->
+
+        <!-- Sample invoices — visible after SS5 completes -->
+        <div id="ss5-invoices" class="hidden" style="margin-top:20px">
+          <div class="section-label">Sample Invoices Created (10 of 1,240)</div>
+          <div class="sample-note">Showing first 10 records — use Download Excel for the full list</div>
+          <table>
+            <thead><tr><th>Invoice No.</th><th>Patient MRN</th><th>Type</th><th>Department</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:var(--mono)">INV-000001</td><td style="font-family:var(--mono)">MRN-004821</td><td>Direct</td><td>Oncology</td><td style="font-family:var(--mono)">$1,240.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000002</td><td style="font-family:var(--mono)">MRN-007134</td><td>Indirect</td><td>Admin</td><td style="font-family:var(--mono)">$284.50</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000003</td><td style="font-family:var(--mono)">MRN-002910</td><td>Services</td><td>Radiology</td><td style="font-family:var(--mono)">$950.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000004</td><td style="font-family:var(--mono)">MRN-009302</td><td>Direct</td><td>Surgery</td><td style="font-family:var(--mono)">$3,120.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000005</td><td style="font-family:var(--mono)">MRN-001155</td><td>Services</td><td>ICU</td><td style="font-family:var(--mono)">$760.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000006</td><td style="font-family:var(--mono)">MRN-003847</td><td>Direct</td><td>Emergency</td><td style="font-family:var(--mono)">$2,480.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000007</td><td style="font-family:var(--mono)">MRN-006621</td><td>Indirect</td><td>Facilities</td><td style="font-family:var(--mono)">$118.75</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000008</td><td style="font-family:var(--mono)">MRN-005509</td><td>Direct</td><td>Cardiology</td><td style="font-family:var(--mono)">$5,600.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000009</td><td style="font-family:var(--mono)">MRN-008813</td><td>Services</td><td>Pharmacy</td><td style="font-family:var(--mono)">$340.00</td><td><span class="badge badge-green">Created</span></td></tr>
+              <tr><td style="font-family:var(--mono)">INV-000010</td><td style="font-family:var(--mono)">MRN-000197</td><td>Direct</td><td>Nephrology</td><td style="font-family:var(--mono)">$1,875.00</td><td><span class="badge badge-green">Created</span></td></tr>
+            </tbody>
+          </table>
+
+          <!-- Totals -->
+          <div style="margin-top:20px">
+            <div class="section-label">Invoice Totals</div>
+            <div class="stats-row">
+              <div class="stat-box blue"><div class="stat-val">$1,240,000</div><div class="stat-label">Direct</div></div>
+              <div class="stat-box blue"><div class="stat-val">$284,500</div><div class="stat-label">Indirect</div></div>
+              <div class="stat-box blue"><div class="stat-val">$95,000</div><div class="stat-label">Services</div></div>
+              <div class="stat-box total"><div class="stat-val">$1,619,500</div><div class="stat-label">Grand Total</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px">
+            <button class="btn btn-primary" onclick="goStep(4)">Next: Adjustments →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- STEP 4: Adjustments                               -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="step-panel" id="step-4">
+      <div class="card">
+        <div class="card-header">
+          <h3>Step 4 — Adjustment Invoices</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="applyAdj()">Apply Adjustments</button>
+            <button class="btn btn-secondary hidden" id="btn-dl-step4" onclick="downloadExcel('adjusted_invoices')"><span class="xls-icon">XLS</span> Download Excel</button>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Enter positive or negative values. Resulting totals cannot go below $0.</p>
+        <div class="adj-row"><div class="adj-label">Direct</div><input type="number" id="adj-direct" value="0" style="width:140px" oninput="clearAdjErr('adj-err-direct')"><div class="adj-note">Base: $1,240,000</div></div>
+        <div class="adj-error" id="adj-err-direct">⚠ Adjustment would result in a negative Direct total.</div>
+        <div class="adj-row"><div class="adj-label">Indirect</div><input type="number" id="adj-indirect" value="0" style="width:140px" oninput="clearAdjErr('adj-err-indirect')"><div class="adj-note">Base: $284,500</div></div>
+        <div class="adj-error" id="adj-err-indirect">⚠ Adjustment would result in a negative Indirect total.</div>
+        <div class="adj-row"><div class="adj-label">Services</div><input type="number" id="adj-services" value="0" style="width:140px" oninput="clearAdjErr('adj-err-services')"><div class="adj-note">Base: $95,000</div></div>
+        <div class="adj-error" id="adj-err-services">⚠ Adjustment would result in a negative Services total.</div>
+        <hr>
+        <div id="step4-result" class="hidden">
+          <div class="stats-row">
+            <div class="stat-box blue"><div class="stat-val" id="adj-direct-val">$1,240,000</div><div class="stat-label">Direct</div></div>
+            <div class="stat-box blue"><div class="stat-val" id="adj-indirect-val">$284,500</div><div class="stat-label">Indirect</div></div>
+            <div class="stat-box blue"><div class="stat-val" id="adj-services-val">$95,000</div><div class="stat-label">Services</div></div>
+            <div class="stat-box total"><div class="stat-val" id="adj-total-val">$1,619,500</div><div class="stat-label">Grand Total</div></div>
+          </div>
+          <div style="margin-top:16px"><button class="btn btn-primary" onclick="goStep(5)">Next: Send to Fusion →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- STEP 5: Send to Fusion                            -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="step-panel" id="step-5">
+      <div class="card">
+        <div class="card-header">
+          <h3>Step 5 — Send Invoices to Oracle Fusion</h3>
+          <button class="btn btn-green" onclick="openSendModal()" id="btn-send">Send to Oracle Fusion →</button>
+        </div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.6">All approved invoices will be pushed via <code style="font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px">SP_SEND_INVOICES_TO_FUSION</code>.</p>
+        <div id="step5-result" class="hidden">
+          <div class="alert alert-success" style="margin-top:16px">
+            ✓ Integration initiated. <a href="#" onclick="showPage('tracking',document.getElementById('tab-tracking'));return false;">Monitor in Tracking →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workflow-area -->
+</div><!-- /page-dashboard -->
+
+<!-- ===================== INDIRECT EXPENSES ===================== -->
+<div class="page" id="page-indirect">
+  <h2>Indirect Expenses</h2>
+  <p class="page-subtitle">Manage indirect cost accounts — synced to Oracle Fusion via REST</p>
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="refreshIndirect()"><span id="refresh-icon">↺</span> Refresh from Fusion</button>
+      <div id="refresh-msg" class="hidden" style="font-size:12px;color:var(--green)">✓ Refreshed from Fusion</div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="addIndirectRow()">+ Add Account</button>
+        <button class="btn btn-primary" onclick="submitIndirect(false)">Submit Changes to Fusion</button>
+      </div>
+    </div>
+    <div class="auth-warn">🔒 Submitting changes requires <strong>INTEGRATION_MANAGER</strong> or <strong>INDIRECT_ADMIN</strong> role.</div>
+    <table>
+      <thead><tr><th>Account</th><th>Description</th><th>Amount (USD)</th><th>Enabled</th><th>Actions</th></tr></thead>
+      <tbody id="indirect-tbody">
+        <tr data-acct="5001"><td style="font-family:var(--mono)">5001</td><td><input type="text" class="inline-edit" value="Overhead — Facilities"></td><td><input type="number" value="120000" style="width:120px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:13px"></td><td><input type="checkbox" checked></td><td><button class="btn btn-danger-outline btn-sm" onclick="promptDelete(this,'5001','Overhead — Facilities')">Deactivate</button></td></tr>
+        <tr data-acct="5002"><td style="font-family:var(--mono)">5002</td><td><input type="text" class="inline-edit" value="Overhead — Admin"></td><td><input type="number" value="94500" style="width:120px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:13px"></td><td><input type="checkbox" checked></td><td><button class="btn btn-danger-outline btn-sm" onclick="promptDelete(this,'5002','Overhead — Admin')">Deactivate</button></td></tr>
+        <tr data-acct="5003"><td style="font-family:var(--mono)">5003</td><td><input type="text" class="inline-edit" value="Overhead — IT"></td><td><input type="number" value="70000" style="width:120px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:13px"></td><td><input type="checkbox"></td><td><button class="btn btn-danger-outline btn-sm" onclick="promptDelete(this,'5003','Overhead — IT')">Deactivate</button></td></tr>
+      </tbody>
+    </table>
+    <div id="submit-msg" class="hidden"><div class="alert alert-success" style="margin-top:12px">✓ Changes saved and pushed to Oracle Fusion REST API.</div></div>
+  </div>
+</div>
+
+<!-- ===================== TRACKING ===================== -->
+<div class="page" id="page-tracking">
+  <h2>Tracking</h2>
+  <p class="page-subtitle">All integration runs — expand to view step detail and manage invoice sending</p>
+  <div class="card">
+    <table>
+      <thead><tr><th></th><th>Run ID</th><th>Period</th><th>Started By</th><th>Started At</th><th>Duration</th><th>Status</th></tr></thead>
+      <tbody>
+
+        <!-- RUN 1: In Progress -->
+        <tr class="track-row" onclick="toggleTrack('t1')">
+          <td style="color:var(--muted);font-size:11px" id="arr-t1">▶</td>
+          <td style="font-family:var(--mono)">RUN-2026-014</td><td>Jan 2026</td><td>ahmed.hassan</td>
+          <td style="font-family:var(--mono);font-size:12px">2026-01-28 09:14</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">—</td>
+          <td><span class="badge badge-yellow">In Progress</span></td>
+        </tr>
+        <tr><td colspan="7" style="padding:0">
+          <div class="track-detail" id="t1">
+            <div class="step-timeline">
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Item Cost</span></div><div class="tl-time">09:14 — 09:22</div><div class="tl-user">ahmed.hassan</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Indirect Cost</span></div><div class="tl-time">09:23 — 09:25</div><div class="tl-user">ahmed.hassan</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-yellow">⟳ Prepare Invoices</span></div><div class="tl-time">09:26 — running</div><div class="tl-user" style="font-size:11px;color:var(--muted)">Sub-step 3/5 — LOAD_02_INDIRECT_TRX_TO_STAGE</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-gray">— Adjustments</span></div><div class="tl-time">—</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-gray">— Send Invoices</span></div><div class="tl-time">—</div></div>
+            </div>
+          </div>
+        </td></tr>
+
+        <!-- RUN 2: sara.ali — Completed -->
+        <tr class="track-row" onclick="toggleTrack('t2')">
+          <td style="color:var(--muted);font-size:11px" id="arr-t2">▶</td>
+          <td style="font-family:var(--mono)">RUN-2026-013</td><td>Jan 2026</td><td>sara.ali</td>
+          <td style="font-family:var(--mono);font-size:12px">2026-01-25 14:03</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">61 min</td>
+          <td><span class="badge badge-green">Completed</span></td>
+        </tr>
+        <tr><td colspan="7" style="padding:0">
+          <div class="track-detail" id="t2">
+            <div class="step-timeline">
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Item Cost</span></div><div class="tl-time">14:03 — 14:11</div><div class="tl-user">sara.ali</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Indirect Cost</span></div><div class="tl-time">14:12 — 14:14</div><div class="tl-user">sara.ali</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Invoices</span></div><div class="tl-time">14:15 — 14:38</div><div class="tl-user">system</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Adjustments</span></div><div class="tl-time">14:39 — 14:41</div><div class="tl-user">sara.ali</div></div>
+              <div class="tl-item" style="flex-direction:column;align-items:stretch;gap:10px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="tl-step"><span class="badge badge-green">✓ Sent to Fusion</span></div>
+                  <div class="tl-time">14:42 — 15:04</div><div class="tl-user">sara.ali</div>
+                </div>
+                <div class="inv-prog">
+                  <div class="inv-prog-item">Sent: <span style="color:var(--green)">1,235</span></div>
+                  <div class="inv-prog-item">Pending: <span style="color:var(--yellow)">0</span></div>
+                  <div class="inv-prog-item">Error: <span style="color:var(--red)">5</span></div>
+                  <div style="flex:1"><div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div></div>
+                  <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">1240/1240</div>
+                </div>
+                <div class="inv-list-wrap">
+                  <div class="inv-list-filter">
+                    <div class="filter-toggle">
+                      <button class="filter-opt active" id="t2-filt-all" onclick="filterInvoices('t2','all')">All</button>
+                      <button class="filter-opt" id="t2-filt-sent" onclick="filterInvoices('t2','sent')">Sent</button>
+                      <button class="filter-opt" id="t2-filt-error" onclick="filterInvoices('t2','error')">Errors <span class="filter-count">5</span></button>
+                    </div>
+                    <span style="font-size:11px;color:var(--muted)" id="t2-inv-summary">Showing all 1,240 invoices</span>
+                  </div>
+                  <table class="inv-list-table" id="t2-inv-table">
+                    <thead><tr><th>Invoice No.</th><th>Type</th><th>Amount</th><th>Status</th><th>Error Detail</th><th>Action</th></tr></thead>
+                    <tbody id="t2-inv-tbody">
+                      <tr data-inv-status="sent"><td style="font-family:var(--mono)">INV-000001</td><td>Direct</td><td style="font-family:var(--mono)">$1,240.00</td><td><span class="badge badge-green">Sent</span></td><td style="color:var(--muted)">—</td><td>—</td></tr>
+                      <tr data-inv-status="sent"><td style="font-family:var(--mono)">INV-000002</td><td>Indirect</td><td style="font-family:var(--mono)">$284.50</td><td><span class="badge badge-green">Sent</span></td><td style="color:var(--muted)">—</td><td>—</td></tr>
+                      <tr data-inv-status="sent"><td style="font-family:var(--mono)">INV-000003</td><td>Services</td><td style="font-family:var(--mono)">$950.00</td><td><span class="badge badge-green">Sent</span></td><td style="color:var(--muted)">—</td><td>—</td></tr>
+                      <tr data-inv-status="error" id="t2-inv-INV-001201"><td style="font-family:var(--mono)">INV-001201</td><td>Direct</td><td style="font-family:var(--mono)">$5,400.00</td><td><span class="badge badge-red" id="t2-inv-status-INV-001201">Error</span></td><td style="color:var(--red);font-size:11px" id="t2-inv-err-INV-001201">Fusion: Duplicate invoice reference</td><td><button class="btn btn-warn btn-sm" onclick="retryInvoice(this,'t2','INV-001201')">↺ Retry</button></td></tr>
+                      <tr data-inv-status="error" id="t2-inv-INV-001202"><td style="font-family:var(--mono)">INV-001202</td><td>Indirect</td><td style="font-family:var(--mono)">$1,200.00</td><td><span class="badge badge-red" id="t2-inv-status-INV-001202">Error</span></td><td style="color:var(--red);font-size:11px" id="t2-inv-err-INV-001202">Fusion: Supplier not found</td><td><button class="btn btn-warn btn-sm" onclick="retryInvoice(this,'t2','INV-001202')">↺ Retry</button></td></tr>
+                      <tr data-inv-status="error" id="t2-inv-INV-001203"><td style="font-family:var(--mono)">INV-001203</td><td>Direct</td><td style="font-family:var(--mono)">$8,750.00</td><td><span class="badge badge-red" id="t2-inv-status-INV-001203">Error</span></td><td style="color:var(--red);font-size:11px" id="t2-inv-err-INV-001203">REST timeout (504)</td><td><button class="btn btn-warn btn-sm" onclick="retryInvoice(this,'t2','INV-001203')">↺ Retry</button></td></tr>
+                      <tr data-inv-status="error" id="t2-inv-INV-001204"><td style="font-family:var(--mono)">INV-001204</td><td>Services</td><td style="font-family:var(--mono)">$3,300.00</td><td><span class="badge badge-red" id="t2-inv-status-INV-001204">Error</span></td><td style="color:var(--red);font-size:11px" id="t2-inv-err-INV-001204">Fusion: Invalid currency code</td><td><button class="btn btn-warn btn-sm" onclick="retryInvoice(this,'t2','INV-001204')">↺ Retry</button></td></tr>
+                      <tr data-inv-status="error" id="t2-inv-INV-001205"><td style="font-family:var(--mono)">INV-001205</td><td>Direct</td><td style="font-family:var(--mono)">$2,100.00</td><td><span class="badge badge-red" id="t2-inv-status-INV-001205">Error</span></td><td style="color:var(--red);font-size:11px" id="t2-inv-err-INV-001205">Fusion: GL period not open</td><td><button class="btn btn-warn btn-sm" onclick="retryInvoice(this,'t2','INV-001205')">↺ Retry</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td></tr>
+
+        <!-- RUN 3: Dec 2025 -->
+        <tr class="track-row" onclick="toggleTrack('t3')">
+          <td style="color:var(--muted);font-size:11px" id="arr-t3">▶</td>
+          <td style="font-family:var(--mono)">RUN-2026-012</td><td>Dec 2025</td><td>ahmed.hassan</td>
+          <td style="font-family:var(--mono);font-size:12px">2025-12-30 11:00</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">52 min</td>
+          <td><span class="badge badge-green">Completed</span></td>
+        </tr>
+        <tr><td colspan="7" style="padding:0">
+          <div class="track-detail" id="t3">
+            <div class="step-timeline">
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Item Cost</span></div><div class="tl-time">11:00 — 11:08</div><div class="tl-user">ahmed.hassan</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Indirect Cost</span></div><div class="tl-time">11:09 — 11:11</div><div class="tl-user">ahmed.hassan</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Invoices</span></div><div class="tl-time">11:12 — 11:31</div><div class="tl-user">system</div></div>
+              <div class="tl-item"><div class="tl-step"><span class="badge badge-green">✓ Adjustments</span></div><div class="tl-time">11:32 — 11:33</div><div class="tl-user">ahmed.hassan</div></div>
+              <div class="tl-item" style="flex-direction:column;align-items:stretch;gap:8px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="tl-step"><span class="badge badge-green">✓ Sent to Fusion</span></div>
+                  <div class="tl-time">11:34 — 11:52</div><div class="tl-user">ahmed.hassan</div>
+                </div>
+                <div class="inv-prog">
+                  <div class="inv-prog-item">Sent: <span style="color:var(--green)">1,240</span></div>
+                  <div class="inv-prog-item">Pending: <span style="color:var(--yellow)">0</span></div>
+                  <div class="inv-prog-item">Error: <span style="color:var(--red)">0</span></div>
+                  <div style="flex:1"><div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div></div>
+                  <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">1240/1240</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td></tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /app-shell -->
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+// ── LOGIN ──
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value.trim();
+  const err=document.getElementById('login-err');
+  if(u==='admin'&&p==='admin'){
+    err.style.display='none';
+    document.getElementById('login-screen').style.opacity='0';
+    document.getElementById('login-screen').style.transition='opacity .4s';
+    setTimeout(()=>{
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app-shell').style.display='block';
+      document.getElementById('nav-username').textContent=u;
+      startSessionTimer();
+    },400);
+  } else {
+    err.style.display='block';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-pass').focus();
+  }
+}
+function doLogout(){
+  document.getElementById('app-shell').style.display='none';
+  document.getElementById('login-screen').style.opacity='1';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+  clearInterval(sessionTimer);
+  document.getElementById('session-bar').classList.remove('show');
+}
+document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+
+// ── NAV ──
+function showPage(p,tabEl){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(tabEl)tabEl.classList.add('active');
+}
+
+// ── DUPLICATE CHECK ──
+const activePeriods={'feb26':{runId:'RUN-2026-015',status:'In Progress'}};
+function onPeriodChange(){
+  const v=document.getElementById('period-select').value;
+  const wa=document.getElementById('workflow-area');
+  const dup=document.getElementById('dup-warn');
+  dup.classList.add('hidden');
+  if(!v){wa.classList.add('hidden');return;}
+  if(activePeriods[v]){
+    wa.classList.add('hidden');dup.classList.remove('hidden');
+    document.getElementById('dup-run-id').textContent=activePeriods[v].runId;
+    document.getElementById('dup-status').textContent=activePeriods[v].status;
+  } else {
+    wa.classList.remove('hidden');
+    document.getElementById('poll-config').classList.remove('hidden');
+    const sl=document.getElementById('period-select');
+    document.getElementById('modal-period-label').textContent=sl.options[sl.selectedIndex].text;
+  }
+}
+
+// ── MAIN STEP NAV ──
+let currentStep=1;
+let maxReachedStep=1;
+
+function goStep(n){
+  document.getElementById('step-'+currentStep).classList.remove('active');
+  for(let i=1;i<n;i++){
+    const d=document.getElementById('dot-'+i);
+    d.classList.remove('active');d.classList.add('done');d.textContent='✓';
+    if(i<5)document.getElementById('line-'+i).classList.add('done');
+  }
+  if(n>maxReachedStep)maxReachedStep=n;
+  currentStep=n;
+  document.getElementById('dot-'+n).classList.add('active');
+  document.getElementById('step-'+n).classList.add('active');
+  refreshDotClickability();
+}
+
+function jumpToStep(n){
+  if(n>maxReachedStep||n===currentStep)return;
+  document.getElementById('step-'+currentStep).classList.remove('active');
+  for(let i=1;i<=5;i++){
+    const d=document.getElementById('dot-'+i);
+    d.classList.remove('active','done');
+    if(i<n){d.classList.add('done');d.textContent='✓';}
+    else if(i===n){d.classList.add('active');d.textContent=i;}
+    else{d.textContent=i;}
+  }
+  for(let i=1;i<=4;i++){
+    const l=document.getElementById('line-'+i);
+    if(i<n)l.classList.add('done');else l.classList.remove('done');
+  }
+  currentStep=n;
+  document.getElementById('step-'+n).classList.add('active');
+  refreshDotClickability();
+}
+
+function refreshDotClickability(){
+  for(let i=1;i<=5;i++){
+    const d=document.getElementById('dot-'+i);
+    const lbl=document.getElementById('wf-label-'+i);
+    if(i<maxReachedStep&&i!==currentStep){
+      d.style.cursor='pointer';d.title='Go back to step '+i;
+      lbl.classList.add('clickable');
+      lbl.onclick=()=>jumpToStep(i);
+    } else {
+      d.style.cursor=i===currentStep?'default':'default';
+      d.title='';lbl.classList.remove('clickable');lbl.onclick=null;
+    }
+  }
+}
+
+// ── STEP 1 ──
+let step1ErrRemaining=4;
+function runStep1(){
+  const btn=document.getElementById('btn-step1');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Running...';
+  setTimeout(()=>{
+    btn.disabled=false;btn.textContent='Collect Data';
+    document.getElementById('step1-result').classList.remove('hidden');
+    document.getElementById('btn-dl-step1').classList.remove('hidden');
+    checkStep1CanProceed();
+  },1800);
+}
+let currentFilter='all';
+function filterItems(mode){
+  currentFilter=mode;
+  document.getElementById('filt-all').classList.toggle('active',mode==='all');
+  document.getElementById('filt-err').classList.toggle('active',mode==='error');
+  const rows=document.querySelectorAll('#items-tbody tr');
+  let shown=0;
+  rows.forEach(r=>{
+    const show=mode==='all'||r.dataset.status==='error';
+    r.classList.toggle('hidden-row',!show);
+    if(show)shown++;
+  });
+  document.getElementById('filter-summary').textContent=
+    mode==='all'?`Showing all ${rows.length} items`:`Showing ${shown} error items`;
+}
+const costs={'ITM-004':'$3.20','ITM-006':'$2.15','ITM-007':'$8.90','ITM-008':'$1.45'};
+function retryItemStep1(btn,itemId){
+  btn.disabled=true;btn.innerHTML='<div class="spinner dark"></div>';
+  setTimeout(()=>{
+    const row=document.getElementById('row-'+itemId);
+    row.dataset.status='processed';
+    document.getElementById('status-'+itemId).innerHTML='<span class="badge badge-green">Processed</span>';
+    document.getElementById('cost-'+itemId).textContent=costs[itemId]||'$0.00';
+    btn.closest('td').innerHTML='<span style="color:var(--green);font-size:12px">✓</span>';
+    step1ErrRemaining--;
+    document.getElementById('s1-errors').textContent=step1ErrRemaining;
+    document.getElementById('s1-processed').textContent=parseInt(document.getElementById('s1-processed').textContent)+1;
+    document.getElementById('err-filter-count').textContent=step1ErrRemaining;
+    document.getElementById('step1-err-count').textContent=step1ErrRemaining;
+    if(currentFilter==='error')filterItems('error');
+    if(step1ErrRemaining===0){
+      document.getElementById('step1-err-alert').classList.add('hidden');
+      document.getElementById('step1-all-resolved').classList.remove('hidden');
+    }
+    checkStep1CanProceed();
+  },1600);
+}
+function checkStep1CanProceed(){
+  const pending=parseInt(document.getElementById('s1-pending').textContent)||0;
+  const errors=parseInt(document.getElementById('s1-errors').textContent)||0;
+  const btn=document.getElementById('btn-next-step1');
+  const note=document.getElementById('next-step1-note');
+  if(pending===0&&errors===0){
+    btn.disabled=false;note.style.display='none';
+  } else {
+    btn.disabled=true;
+    const parts=[];
+    if(errors>0)parts.push(`${errors} item(s) with no cost`);
+    if(pending>0)parts.push(`${pending} pending item(s)`);
+    note.textContent='Cannot proceed: '+parts.join(' and ')+' must be resolved first.';
+    note.style.display='inline';
+  }
+}
+
+// ── STEP 2 ──
+function runStep2(){
+  const btn=document.getElementById('btn-step2');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Running...';
+  setTimeout(()=>{btn.disabled=false;btn.textContent='Collect Data';document.getElementById('step2-result').classList.remove('hidden');document.getElementById('btn-dl-step2').classList.remove('hidden');},1500);
+}
+function runStep2Retry(){
+  const r=document.getElementById('step2-result');
+  const btn=document.getElementById('btn-step2-retry');
+  btn.innerHTML='<div class="spinner dark"></div>';
+  r.classList.add('hidden');
+  setTimeout(()=>{r.classList.remove('hidden');btn.textContent='↺ Retry';},1200);
+}
+
+// ── STEP 3: 5 SUB-STEPS ──
+// Sub-step config: [name, procedure, durationMs, totalRecords]
+const SS_CONFIG=[
+  {name:'Update Patient Names', proc:'UPDATE_MRN_NAME_FROM_CERNER', dur:2200, total:3840},
+  {name:'Load Direct Data',     proc:'LOAD_01_DIRECT_TRX_TO_STAGE', dur:3000, total:12480},
+  {name:'Load Indirect Data',   proc:'LOAD_02_INDIRECT_TRX_TO_STAGE', dur:1800, total:2160},
+  {name:'Load Service Data',    proc:'LOAD_03_SERVICE_TRX_TO_STAGE', dur:2500, total:5920},
+  {name:'Create Invoices',      proc:'CREATE_ONPRIME_INVOICE_JOB', dur:4000, total:1240},
+];
+
+let ssState=[
+  {status:'idle'},{status:'idle'},{status:'idle'},{status:'idle'},{status:'idle'}
+];
+let ssTimers=[];
+let step3Running=false;
+
+function fmtTime(d){
+  return d.getHours().toString().padStart(2,'0')+':'+
+         d.getMinutes().toString().padStart(2,'0')+':'+
+         d.getSeconds().toString().padStart(2,'0');
+}
+function fmtDur(ms){
+  const s=Math.floor(ms/1000);
+  return s<60?s+'s':Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s';
+}
+
+function setSsIcon(idx,state){
+  const el=document.getElementById('ss-icon-'+(idx+1));
+  el.className='substep-icon'+(state==='done'?' done':state==='running'?' running':state==='error'?' error':'');
+  if(state==='done')el.innerHTML='✓';
+  else if(state==='running')el.innerHTML='<div class="spinner" style="width:10px;height:10px;border-width:2px"></div>';
+  else if(state==='error')el.innerHTML='✗';
+  else el.textContent=idx+1;
+  const row=document.getElementById('ss-row-'+(idx+1));
+  row.className='substep-row'+(state==='done'?' ss-done':state==='running'?' ss-running':state==='error'?' ss-error':'');
+}
+
+function runSubStep(idx){
+  return new Promise((resolve,reject)=>{
+    const cfg=SS_CONFIG[idx];
+    const start=new Date();
+    ssState[idx].status='running';
+    ssState[idx].startTime=start;
+    setSsIcon(idx,'running');
+    document.getElementById('ss-time-'+(idx+1)).textContent=fmtTime(start);
+    document.getElementById('ss-action-'+(idx+1)).innerHTML='<span class="badge badge-yellow">Running</span>';
+
+    let prog=0;
+    const progInterval=setInterval(()=>{
+      prog=Math.min(prog+(100/(cfg.dur/120)),99);
+      const records=Math.floor((prog/100)*cfg.total);
+      document.getElementById('ss-prog-'+(idx+1)).style.width=Math.round(prog)+'%';
+      document.getElementById('ss-progval-'+(idx+1)).textContent=
+        records.toLocaleString()+'/'+cfg.total.toLocaleString();
+    },120);
+
+    setTimeout(()=>{
+      clearInterval(progInterval);
+      const end=new Date();
+      const durMs=end-start;
+      ssState[idx].status='done';
+      ssState[idx].endTime=end;
+      setSsIcon(idx,'done');
+      document.getElementById('ss-prog-'+(idx+1)).style.width='100%';
+      document.getElementById('ss-prog-'+(idx+1)).classList.add('green');
+      document.getElementById('ss-progval-'+(idx+1)).textContent=
+        cfg.total.toLocaleString()+'/'+cfg.total.toLocaleString();
+      document.getElementById('ss-dur-'+(idx+1)).textContent=fmtDur(durMs);
+      document.getElementById('ss-action-'+(idx+1)).innerHTML='<span class="badge badge-green">Done</span>';
+      resolve();
+    },cfg.dur);
+  });
+}
+
+async function runStep3All(){
+  if(step3Running)return;
+  step3Running=true;
+  const btn=document.getElementById('btn-step3-run');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Running...';
+
+  // reset all to idle first
+  for(let i=0;i<5;i++){
+    ssState[i]={status:'idle'};
+    setSsIcon(i,'idle');
+    document.getElementById('ss-time-'+(i+1)).textContent='—';
+    document.getElementById('ss-dur-'+(i+1)).textContent='—';
+    document.getElementById('ss-prog-'+(i+1)).style.width='0%';
+    document.getElementById('ss-prog-'+(i+1)).className='progress-fill';
+    document.getElementById('ss-progval-'+(i+1)).textContent='—';
+    document.getElementById('ss-action-'+(i+1)).textContent='—';
+  }
+  document.getElementById('ss5-invoices').classList.add('hidden');
+
+  for(let i=0;i<5;i++){
+    try{
+      await runSubStep(i);
+    } catch(e){
+      // error state
+      ssState[i].status='error';
+      setSsIcon(i,'error');
+      document.getElementById('ss-action-'+(i+1)).innerHTML=
+        `<button class="btn btn-danger-outline btn-sm" onclick="retrySubStep(${i})">↺ Retry</button>`;
+      step3Running=false;
+      btn.disabled=false;btn.textContent='Run All Steps';
+      return;
+    }
+  }
+
+  // All done
+  step3Running=false;
+  btn.disabled=false;btn.textContent='Run All Steps';
+  document.getElementById('btn-dl-step3').classList.remove('hidden');
+  document.getElementById('ss5-invoices').classList.remove('hidden');
+}
+
+async function retrySubStep(idx){
+  const btn=document.getElementById('btn-step3-run');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Running...';
+  step3Running=true;
+
+  // reset from idx onwards
+  for(let i=idx;i<5;i++){
+    ssState[i]={status:'idle'};
+    setSsIcon(i,'idle');
+    document.getElementById('ss-time-'+(i+1)).textContent='—';
+    document.getElementById('ss-dur-'+(i+1)).textContent='—';
+    document.getElementById('ss-prog-'+(i+1)).style.width='0%';
+    document.getElementById('ss-prog-'+(i+1)).className='progress-fill';
+    document.getElementById('ss-progval-'+(i+1)).textContent='—';
+    document.getElementById('ss-action-'+(i+1)).textContent='—';
+  }
+  document.getElementById('ss5-invoices').classList.add('hidden');
+
+  for(let i=idx;i<5;i++){
+    try{
+      await runSubStep(i);
+    } catch(e){
+      ssState[i].status='error';
+      setSsIcon(i,'error');
+      document.getElementById('ss-action-'+(i+1)).innerHTML=
+        `<button class="btn btn-danger-outline btn-sm" onclick="retrySubStep(${i})">↺ Retry</button>`;
+      step3Running=false;
+      btn.disabled=false;btn.textContent='Run All Steps';
+      return;
+    }
+  }
+
+  step3Running=false;
+  btn.disabled=false;btn.textContent='Run All Steps';
+  document.getElementById('btn-dl-step3').classList.remove('hidden');
+  document.getElementById('ss5-invoices').classList.remove('hidden');
+}
+
+// ── STEP 4 ──
+const base={d:1240000,i:284500,s:95000};
+function clearAdjErr(id){document.getElementById(id).style.display='none';}
+function applyAdj(){
+  const d=parseFloat(document.getElementById('adj-direct').value)||0;
+  const i=parseFloat(document.getElementById('adj-indirect').value)||0;
+  const s=parseFloat(document.getElementById('adj-services').value)||0;
+  let ok=true;
+  if(base.d+d<0){document.getElementById('adj-err-direct').style.display='block';ok=false;}
+  if(base.i+i<0){document.getElementById('adj-err-indirect').style.display='block';ok=false;}
+  if(base.s+s<0){document.getElementById('adj-err-services').style.display='block';ok=false;}
+  if(!ok)return;
+  const nd=base.d+d,ni=base.i+i,ns=base.s+s,total=nd+ni+ns;
+  const fmt=v=>'$'+v.toLocaleString();
+  document.getElementById('adj-direct-val').textContent=fmt(nd);
+  document.getElementById('adj-indirect-val').textContent=fmt(ni);
+  document.getElementById('adj-services-val').textContent=fmt(ns);
+  document.getElementById('adj-total-val').textContent=fmt(total);
+  document.getElementById('ms-direct').textContent=fmt(nd);
+  document.getElementById('ms-indirect').textContent=fmt(ni);
+  document.getElementById('ms-services').textContent=fmt(ns);
+  document.getElementById('ms-total').textContent=fmt(total);
+  document.getElementById('step4-result').classList.remove('hidden');
+  document.getElementById('btn-dl-step4').classList.remove('hidden');
+}
+
+// ── STEP 5 ──
+function openSendModal(){document.getElementById('modal-send').classList.add('open');}
+function confirmSendToFusion(){
+  closeModal('modal-send');
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Sending...';
+  setTimeout(()=>{
+    btn.disabled=false;btn.textContent='Send to Oracle Fusion →';
+    document.getElementById('step5-result').classList.remove('hidden');
+  },2000);
+}
+
+// ── MODALS ──
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+
+// ── INDIRECT ──
+function refreshIndirect(){
+  const msg=document.getElementById('refresh-msg');
+  const icon=document.getElementById('refresh-icon');
+  msg.classList.add('hidden');
+  icon.style.animation='spin .6s linear infinite';
+  setTimeout(()=>{icon.style.animation='';msg.classList.remove('hidden');},1500);
+}
+let pendingDeleteBtn=null;
+function promptDelete(btn,acct,desc){
+  pendingDeleteBtn=btn;
+  document.getElementById('modal-delete-acct').textContent=acct+' — '+desc;
+  document.getElementById('modal-delete').classList.add('open');
+}
+function confirmDelete(){
+  closeModal('modal-delete');
+  if(!pendingDeleteBtn)return;
+  const row=pendingDeleteBtn.closest('tr');
+  row.style.opacity='.35';
+  row.querySelector('input[type=checkbox]').checked=false;
+  row.querySelector('input[type=checkbox]').disabled=true;
+  pendingDeleteBtn.closest('td').innerHTML='<span class="badge badge-gray">Inactive</span>';
+}
+function submitIndirect(isRetry){
+  const msg=document.getElementById('submit-msg');
+  msg.classList.add('hidden');
+  setTimeout(()=>{
+    if(!isRetry){document.getElementById('modal-fusion-err').classList.add('open');}
+    else{msg.classList.remove('hidden');}
+  },900);
+}
+function addIndirectRow(){
+  const acct='50'+(Math.floor(Math.random()*90)+10);
+  const tbody=document.getElementById('indirect-tbody');
+  const tr=document.createElement('tr');
+  tr.dataset.acct=acct;
+  tr.innerHTML=`<td style="font-family:var(--mono)">${acct}</td>
+    <td><input type="text" class="inline-edit" placeholder="Account description"></td>
+    <td><input type="number" value="0" style="width:120px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:13px"></td>
+    <td><input type="checkbox" checked></td>
+    <td><button class="btn btn-danger-outline btn-sm" onclick="promptDelete(this,'${acct}','New Account')">Deactivate</button></td>`;
+  tbody.appendChild(tr);
+  tr.querySelector('input[type=text]').focus();
+}
+
+// ── TRACKING ──
+function toggleTrack(id){
+  const el=document.getElementById(id);
+  const arr=document.getElementById('arr-'+id);
+  el.classList.toggle('open');
+  arr.textContent=el.classList.contains('open')?'▼':'▶';
+}
+function filterInvoices(runId,mode){
+  const filtAll=document.getElementById(runId+'-filt-all');
+  const filtSent=document.getElementById(runId+'-filt-sent');
+  const filtErr=document.getElementById(runId+'-filt-error');
+  [filtAll,filtSent,filtErr].forEach(b=>b&&b.classList.remove('active'));
+  if(mode==='all'&&filtAll)filtAll.classList.add('active');
+  if(mode==='sent'&&filtSent)filtSent.classList.add('active');
+  if(mode==='error'&&filtErr)filtErr.classList.add('active');
+  const tbody=document.getElementById(runId+'-inv-tbody');
+  if(!tbody)return;
+  const rows=tbody.querySelectorAll('tr');
+  let shown=0;
+  rows.forEach(r=>{
+    const s=r.dataset.invStatus;
+    const show=mode==='all'||(mode==='sent'&&s==='sent')||(mode==='error'&&s==='error');
+    r.classList.toggle('hidden-row',!show);
+    if(show)shown++;
+  });
+  const summary=document.getElementById(runId+'-inv-summary');
+  if(summary)summary.textContent=`Showing ${shown} invoice${shown!==1?'s':''}`;
+}
+function retryInvoice(btn,runId,invId){
+  btn.disabled=true;btn.innerHTML='<div class="spinner dark"></div>';
+  setTimeout(()=>{
+    const row=document.getElementById(runId+'-inv-'+invId);
+    if(!row)return;
+    row.dataset.invStatus='sent';
+    const sc=document.getElementById(runId+'-inv-status-'+invId);
+    const ec=document.getElementById(runId+'-inv-err-'+invId);
+    if(sc)sc.outerHTML='<span class="badge badge-green" id="'+runId+'-inv-status-'+invId+'">Sent</span>';
+    if(ec){ec.style.color='var(--muted)';ec.textContent='—';}
+    btn.closest('td').innerHTML='<span style="color:var(--green);font-size:12px">✓</span>';
+    const ab=document.querySelector('#'+runId+'-filt-error.active,#'+runId+'-filt-sent.active,#'+runId+'-filt-all.active');
+    if(ab){const mode=ab.id.includes('error')?'error':ab.id.includes('sent')?'sent':'all';filterInvoices(runId,mode);}
+  },1800);
+}
+
+// ── EXCEL DOWNLOAD ──
+function downloadExcel(name){
+  const period=document.getElementById('period-select')?.value||'period';
+  const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Sheet1"><Table>
+<Row><Cell><Data ss:Type="String">Export: ${name}</Data></Cell></Row>
+<Row><Cell><Data ss:Type="String">Period</Data></Cell><Cell><Data ss:Type="String">${period}</Data></Cell></Row>
+<Row><Cell><Data ss:Type="String">Generated</Data></Cell><Cell><Data ss:Type="String">${new Date().toISOString()}</Data></Cell></Row>
+</Table></Worksheet></Workbook>`;
+  const blob=new Blob([xml],{type:'application/vnd.ms-excel'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${name}_${period}.xlsx`;a.click();URL.revokeObjectURL(a.href);
+}
+
+// ── SESSION TIMER ──
+let sessionTimer;
+function startSessionTimer(){
+  let secs=300;
+  sessionTimer=setInterval(()=>{
+    secs--;
+    if(secs<=60){
+      document.getElementById('session-bar').classList.add('show');
+      const m=String(Math.floor(secs/60)).padStart(1,'0');
+      const s=String(secs%60).padStart(2,'0');
+      document.getElementById('session-countdown').textContent=m+':'+s;
+    }
+    if(secs<=0){clearInterval(sessionTimer);document.getElementById('session-countdown').textContent='0:00';}
+  },1000);
+}
+function extendSession(){
+  clearInterval(sessionTimer);
+  document.getElementById('session-bar').classList.remove('show');
+  startSessionTimer();
+}
+</script>
+</body>
+</html>
